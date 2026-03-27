@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Play — Web Workbook</title>
+
+  <link rel="stylesheet" href="css/style.css" />
+
+</head>
+<body class="play-page play-gallery-page">
+
+  <header class="site-header">
+    <a href="index.html" class="site-title">ZI HAN / WEB WORKBOOK</a>
+
+    <nav class="site-nav">
+      <a href="index.html">Home</a>
+      <a href="research.html">Research</a>
+      <a href="experiments.html">Experiments</a>
+      <a href="archive.html">Archive</a>
+      <a href="journal.html">Journal</a>
+      <a href="p5.html">P5.js</a>
+      <a href="process.html">Process</a>
+    </nav>
+  </header>
+
+  <main class="play-gallery-shell">
+    <section class="play-gallery-intro">
+      <h1>Galerie de Rotation</h1>
+      <p>
+        “Form moves through space,<br>
+        silent as sculpture,<br>
+        free as a line.”
+      </p>
+    </section>
+
+    <section class="play-gallery-poem">
+      <div class="poem">
+        On the ring<br>
+        light and shadow intersect<br>
+        each surface becomes<br>
+        a slice of time.
+      </div>
+      <div class="signature">03 / 2026</div>
+    </section>
+
+    <div class="play-gallery-hint">Hover to pause · ZI HAN WORKS</div>
+
+    <section class="play-gallery-center" aria-label="3D rotating gallery">
+      <div id="canvas-container"></div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    let galleryImages = [];
+    const numImages = 5;
+
+    let radius = 180;
+    let rotationY = 0;
+    let isHovering = false;
+    let imgWidth = 120;
+    let imgHeight = 170;
+
+    const imageUrls = [
+      "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=600&h=840&fit=crop",
+      "https://images.unsplash.com/photo-1551913902-c92207136625?w=600&h=840&fit=crop",
+      "https://images.unsplash.com/photo-1515405295579-ba7b45403062?w=600&h=840&fit=crop",
+      "https://images.unsplash.com/photo-1547891654-e66ed7ebb968?w=600&h=840&fit=crop",
+      "https://images.unsplash.com/photo-1507643179173-39db4ff5df6f?w=600&h=840&fit=crop"
+    ];
+
+    function preload() {
+      for (let i = 0; i < numImages; i++) {
+        galleryImages[i] = loadImage(
+          imageUrls[i],
+          () => {
+            console.log("图片 " + i + " 加载成功");
+          },
+          () => {
+            console.log("图片 " + i + " 加载失败，使用生成纹理");
+            galleryImages[i] = null;
+          }
+        );
+      }
+    }
+
+    function setup() {
+      const container = document.getElementById("canvas-container");
+      const w = container.offsetWidth;
+      const h = container.offsetHeight;
+
+      const canvas = createCanvas(w, h, WEBGL);
+      canvas.parent("canvas-container");
+
+      pixelDensity(1);
+      textureMode(NORMAL);
+      drawingContext.disable(drawingContext.CULL_FACE);
+
+      camera(0, -200, 600, 0, 0, 0, 0, 1, 0);
+
+      for (let i = 0; i < numImages; i++) {
+        if (!galleryImages[i] || galleryImages[i].width === 0) {
+          galleryImages[i] = createArtTexture(i);
+        }
+      }
+    }
+
+    function draw() {
+      background(255);
+
+      ambientLight(150);
+      directionalLight(255, 255, 255, 0.3, 0.8, -0.5);
+      pointLight(255, 255, 255, 0, -200, 400);
+
+      isHovering = mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height;
+
+      if (!isHovering) {
+        rotationY += 0.008;
+      }
+
+      push();
+      rotateY(rotationY);
+
+      const angleStep = TWO_PI / numImages;
+
+      for (let i = 0; i < numImages; i++) {
+        const angle = i * angleStep;
+
+        push();
+
+        const x = radius * cos(angle);
+        const z = radius * sin(angle);
+
+        translate(x, 0, z);
+        rotateY(-angle + HALF_PI);
+
+        if (galleryImages[i]) {
+          noStroke();
+          texture(galleryImages[i]);
+
+          push();
+          scale(-1, 1, 1);
+          plane(imgWidth, imgHeight);
+          pop();
+        }
+
+        pop();
+      }
+
+      pop();
+    }
+
+    function createArtTexture(index) {
+      const pg = createGraphics(400, 560);
+
+      switch (index) {
+        case 0:
+          pg.background(20, 30, 60);
+          for (let i = 0; i < 20; i++) {
+            pg.fill(random(100, 255), random(50, 150), random(100, 200), 150);
+            pg.noStroke();
+            pg.ellipse(random(400), random(560), random(100, 300));
+          }
+          break;
+
+        case 1:
+          pg.background(200, 200, 210);
+          pg.fill(255, 255, 255, 100);
+          pg.noStroke();
+          for (let i = 0; i < 10; i++) {
+            pg.ellipse(200, 280, 100 + i * 30, 150 + i * 40);
+          }
+          break;
+
+        case 2:
+          pg.background(240, 240, 240);
+          pg.stroke(20, 20, 40);
+          pg.strokeWeight(2);
+          for (let i = 0; i < 50; i++) {
+            pg.line(random(400), 0, random(400), 560);
+          }
+          break;
+
+        case 3:
+          pg.background(100, 50, 50);
+          for (let i = 0; i < 100; i++) {
+            pg.stroke(random(150, 255), random(100, 200), 50, 100);
+            pg.strokeWeight(random(5, 20));
+            pg.line(random(400), random(560), random(400), random(560));
+          }
+          break;
+
+        case 4:
+          pg.background(255);
+          pg.stroke(0);
+          pg.strokeWeight(1);
+          for (let i = 0; i < 100; i++) {
+            pg.line(random(400), random(560), random(400), random(560));
+          }
+          pg.fill(0);
+          pg.noStroke();
+          pg.textSize(40);
+          pg.textAlign(CENTER, CENTER);
+          pg.text("LINE ART", 200, 280);
+          break;
+      }
+
+      return pg;
+    }
+
+    function windowResized() {
+      const container = document.getElementById("canvas-container");
+      const w = container.offsetWidth;
+      const h = container.offsetHeight;
+
+      resizeCanvas(w, h);
+      camera(0, -200, 600, 0, 0, 0, 0, 1, 0);
+    }
+  </script>
+</body>
+</html>
